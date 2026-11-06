@@ -11,8 +11,8 @@ public static class PoissonDisk
 
     public static List<Vector2> Sample(Vector2 size, float minDistance)
     {
-        // A cell of side r/√2 has a diagonal of r, so it holds at most one point
         float cellSize = minDistance / Mathf.Sqrt(2f);
+        
         // Index + 1 of the point in each cell, 0 if the cell is empty
         int[,] grid = new int[Mathf.CeilToInt(size.x / cellSize), Mathf.CeilToInt(size.y / cellSize)];
         List<Vector2> points = new List<Vector2>();

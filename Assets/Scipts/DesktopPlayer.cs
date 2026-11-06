@@ -3,6 +3,8 @@ using UnityEngine.InputSystem;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit.Interactables;
 
+// !! MADE BY CLAUDE TO EASILY TEST THE GAME WITHOUT A HEADSET. IT IS NOT USED IN VR. !!
+
 // Keyboard and mouse player, to test without a headset. It replaces the XR rig when no headset is active.
 // The held object follows the hand with velocity tracking, like XRI does in VR,
 // so it still hits things and breaks them (it only breaks itself once thrown, see Breakable.IsHeld)

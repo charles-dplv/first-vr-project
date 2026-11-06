@@ -4,10 +4,9 @@ using UnityEngine;
 public class RoomGenerator : MonoBehaviour
 {
     [SerializeField] private int seed = 0;
-    // Area where the furniture goes (yellow gizmo). It is out of sight from the detector, and it leaves free
-    // a path along the inner walls, so that the player can always walk the loop
     [SerializeField] private Vector3 zoneCenter = new Vector3(-1.85f, 0f, 1.85f);
     [SerializeField] private Vector2 zoneSize = new Vector2(6.2f, 4.2f);
+
     // Minimum distance between two pieces of furniture (m)
     [SerializeField] private float minDistance = 1.8f;
 
@@ -15,7 +14,6 @@ public class RoomGenerator : MonoBehaviour
 
     public void Generate(Transform room, int id)
     {
-        // Same seed = same random numbers = same room
         Random.InitState(seed + id);
 
         // Colors of the room: one hue for the furniture, the opposite hue for the small objects
@@ -129,12 +127,5 @@ public class RoomGenerator : MonoBehaviour
         obj.transform.SetLocalPositionAndRotation(position, rotation);
         // The room is inactive while it is built: Awake of the object will run when the room is shown
         obj.SetActive(true);
-    }
-
-    private void OnDrawGizmos()
-    {
-        // Rooms are children of RoomsParent, which is at the origin
-        Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(zoneCenter, new Vector3(zoneSize.x, 0.05f, zoneSize.y));
     }
 }

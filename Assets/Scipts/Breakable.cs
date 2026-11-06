@@ -8,7 +8,6 @@ using UnityEngine.XR.Interaction.Toolkit.Interactables;
 [RequireComponent(typeof(Rigidbody))]
 public class Breakable : MonoBehaviour
 {
-    // Both are needed: a falling table is slow but heavy (big impulse), a flying cube is fast but light
     [SerializeField] private float minSpeed = 3f;
     [SerializeField] private float minImpulse = 2f;
     [SerializeField] private float breakRadius = 0.25f;
@@ -30,7 +29,6 @@ public class Breakable : MonoBehaviour
     // (a quick turn slams the object into a wall), so in desktop mode an object only breaks once thrown
     public bool IsHeld { get; set; }
 
-    // Called while the object is still inactive, so before Awake
     public void Setup(float minSpeed, float minImpulse, float breakRadius, float chunkMass)
     {
         this.minSpeed = minSpeed;

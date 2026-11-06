@@ -4,8 +4,6 @@ using UnityEngine;
 public class RoomDetector : MonoBehaviour
 {
     [SerializeField] private RoomManager roomManager;
-    // Head of the player. Uses the main camera if empty: the XR camera or the desktop one,
-    // so it is looked up every frame (we only know at start which one is used)
     [SerializeField] private Transform player;
     private const float deadZone = 0.05f;
     private BoxCollider box;
