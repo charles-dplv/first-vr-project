@@ -3,28 +3,36 @@ using UnityEngine;
 [RequireComponent(typeof(BoxCollider))]
 public class RoomDetector : MonoBehaviour
 {
-    
     [SerializeField] private RoomManager roomManager;
+    // Head of the player. Uses the main camera if empty: the XR camera or the desktop one,
+    // so it is looked up every frame (we only know at start which one is used)
+    [SerializeField] private Transform player;
     private const float deadZone = 0.05f;
+    private BoxCollider box;
     private int lastSide;
-    private int playerColliders;
 
-    private void OnTriggerEnter(Collider other)
+    private void Awake()
     {
-        if (!other.CompareTag("Player"))
-            return;
-
-        // The player can have several colliders: only remember the side for the first one
-        if (playerColliders++ == 0)
-            lastSide = GetSide(other.bounds.center);
+        box = GetComponent<BoxCollider>();
+        box.isTrigger = true;
     }
 
-    private void OnTriggerStay(Collider other)
+    private void Update()
     {
-        if (!other.CompareTag("Player"))
+        Transform head = player != null ? player : (Camera.main != null ? Camera.main.transform : null);
+        if (head == null)
             return;
 
-        int side = GetSide(other.bounds.center);
+        Vector3 local = transform.InverseTransformPoint(head.position) - box.center;
+
+        // Forget the side as soon as the player leaves the detector (height is ignored)
+        if (Mathf.Abs(local.x) > box.size.x / 2f || Mathf.Abs(local.z) > box.size.z / 2f)
+        {
+            lastSide = 0;
+            return;
+        }
+
+        int side = GetSide(local.z);
 
         // Change room as soon as the player crosses the detector plane
         if (side != 0 && lastSide != 0 && side != lastSide)
@@ -34,16 +42,10 @@ public class RoomDetector : MonoBehaviour
             lastSide = side;
     }
 
-    private void OnTriggerExit(Collider other)
+    // 1 if in front of the detector (blue axis), -1 if behind, 0 if on the plane
+    private int GetSide(float localZ)
     {
-        if (other.CompareTag("Player"))
-            playerColliders = Mathf.Max(0, playerColliders - 1);
-    }
-
-    // 1 if the position is in front of the detector (blue axis), -1 if behind, 0 if on the plane
-    private int GetSide(Vector3 position)
-    {
-        float d = Vector3.Dot(position - transform.TransformPoint(GetComponent<BoxCollider>().center), transform.forward);
+        float d = localZ * transform.lossyScale.z;
         return Mathf.Abs(d) < deadZone ? 0 : (d > 0 ? 1 : -1);
     }
 
@@ -58,13 +60,5 @@ public class RoomDetector : MonoBehaviour
         Gizmos.DrawCube(box.center, box.size);
         Gizmos.color = Color.green;
         Gizmos.DrawWireCube(box.center, box.size);
-
-        // Arrow pointing toward the next room
-        Gizmos.matrix = Matrix4x4.identity;
-        Vector3 start = transform.TransformPoint(box.center);
-        Vector3 end = start + transform.forward;
-        Gizmos.color = Color.blue;
-        Gizmos.DrawLine(start, end);
-        Gizmos.DrawSphere(end, 0.1f);
     }
 }
