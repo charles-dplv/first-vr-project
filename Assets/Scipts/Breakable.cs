@@ -25,8 +25,7 @@ public class Breakable : MonoBehaviour
     private Mesh combinedMesh;
     private bool shatters;
 
-    // Set by DesktopPlayer while the object is held: with a mouse the "hand" is hard to control
-    // (a quick turn slams the object into a wall), so in desktop mode an object only breaks once thrown
+    // Set by DesktopPlayer while the object is held
     public bool IsHeld { get; set; }
 
     public void Setup(float minSpeed, float minImpulse, float breakRadius, float chunkMass)
@@ -41,16 +40,13 @@ public class Breakable : MonoBehaviour
     {
         body = GetComponent<Rigidbody>();
 
-        // The cubes are the children with a collider (XRI also adds an attach point as a child when grabbing)
+        // The cubes are the children with a collider
         foreach (Transform child in transform)
             if (child.TryGetComponent(out Collider _))
                 chunks.Add(child);
 
-        // A grabbable object shatters completely. The XR Interaction Manager links each collider to the object
-        // when it registers, so if a part stayed, grabbing a fallen cube would grab that part
         shatters = TryGetComponent(out XRGrabInteractable _);
 
-        // The cubes are drawn by one mesh on this object (see UpdateObject)
         if (!TryGetComponent(out meshFilter))
             meshFilter = gameObject.AddComponent<MeshFilter>();
         if (!TryGetComponent(out MeshRenderer meshRenderer))
@@ -67,10 +63,6 @@ public class Breakable : MonoBehaviour
         // Speed at which the two objects come together, along the normal of the contact
         float speed = Mathf.Abs(Vector3.Dot(collision.relativeVelocity, contact.normal));
 
-        // Impulse that stops them: J = μ v, with μ = m1 m2 / (m1 + m2) the reduced mass.
-        // A wall or a kinematic body counts as an infinite mass, then μ = m1.
-        // We compute it instead of reading collision.impulse: Unity splits that one between the cubes,
-        // and gives 0 when continuous collision detection stops the object just before the contact
         Rigidbody other = collision.rigidbody;
         float reducedMass = other == null || other.isKinematic ? body.mass : body.mass * other.mass / (body.mass + other.mass);
         float impulse = reducedMass * speed;
@@ -84,7 +76,6 @@ public class Breakable : MonoBehaviour
     private void Break(Vector3 impact)
     {
         // 1. Detach the cubes close to the impact (all of them if the object shatters)
-        // Go backwards because we remove cubes from the list
         for (int i = chunks.Count - 1; i >= 0; i--)
         {
             if (shatters || Vector3.Distance(chunks[i].position, impact) <= breakRadius)
@@ -133,7 +124,6 @@ public class Breakable : MonoBehaviour
             List<Transform> part = new List<Transform> { left[0] };
             left.RemoveAt(0);
 
-            // The part grows while we go through it, it is also the queue of the search
             for (int i = 0; i < part.Count; i++)
             {
                 for (int j = left.Count - 1; j >= 0; j--)
@@ -161,7 +151,6 @@ public class Breakable : MonoBehaviour
 
     private void Detach(Transform chunk, Vector3 impact)
     {
-        // Keep the cube in the room, so it is hidden along with it
         chunk.SetParent(transform.parent, true);
         chunk.GetComponent<MeshRenderer>().enabled = true;
 
@@ -178,7 +167,6 @@ public class Breakable : MonoBehaviour
     private void CreatePiece(List<Transform> part)
     {
         GameObject piece = new GameObject(name);
-        // Inactive while it is set up, so that its Awake runs after Setup
         piece.SetActive(false);
         piece.transform.SetParent(transform.parent, false);
         piece.transform.SetPositionAndRotation(transform.position, transform.rotation);
@@ -194,8 +182,7 @@ public class Breakable : MonoBehaviour
         pieceBody.angularVelocity = body.angularVelocity;
     }
 
-    // Mass of the remaining cubes, and one mesh that draws them all:
-    // one draw call per object instead of one per cube, which matters on Quest
+    // One draw call per object instead of one per cube
     private void UpdateObject()
     {
         body.mass = chunkMass * chunks.Count;
@@ -218,7 +205,6 @@ public class Breakable : MonoBehaviour
 
     private void OnDestroy()
     {
-        // A mesh created by code is not freed with the object
         if (combinedMesh != null)
             Destroy(combinedMesh);
     }

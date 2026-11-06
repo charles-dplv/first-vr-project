@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Fills a room with furniture and small objects. The same id always gives the same room
+// Fills a room with prefabs cut into small cubes. The same id always gives the same room
 public class RoomGenerator : MonoBehaviour
 {
     [SerializeField] private int seed = 0;
@@ -9,6 +9,19 @@ public class RoomGenerator : MonoBehaviour
 
     // Minimum distance between two pieces of furniture (m)
     [SerializeField] private float minDistance = 1.8f;
+    // No new piece of furniture above this number of cubes: too many of them is too slow on Quest
+    [SerializeField] private int maxCubes = 1100;
+
+    // Tables and shelves: small objects are put on their "Slot" children
+    [SerializeField] private GameObject[] furniturePrefabs;
+    // Their "Slot" child is the place of the next crate of the stack
+    [SerializeField] private GameObject[] cratePrefabs;
+    [SerializeField] private GameObject chairPrefab;
+    [SerializeField] private GameObject[] itemPrefabs;
+
+    // Side of a cube (m). Bigger cubes = fewer objects for the Quest to handle
+    private const float furnitureCube = 0.12f;
+    private const float itemCube = 0.06f;
 
     private static readonly Color wood = new Color(0.55f, 0.4f, 0.25f);
 
@@ -24,15 +37,16 @@ public class RoomGenerator : MonoBehaviour
         // One spot per piece of furniture, never too close to another one
         foreach (Vector2 spot in PoissonDisk.Sample(zoneSize, minDistance))
         {
+            if (room.GetComponentsInChildren<Collider>(true).Length >= maxCubes)
+                break;
+
             Vector3 position = zoneCenter + new Vector3(spot.x - zoneSize.x / 2f, 0f, spot.y - zoneSize.y / 2f);
             // Mostly aligned with the walls, but a bit messy
             Quaternion rotation = Quaternion.Euler(0f, Random.Range(0, 4) * 90f + Random.Range(-15f, 15f), 0f);
 
             float type = Random.value;
-            if (type < 0.4f)
-                AddTable(room, position, rotation, furnitureColor, itemColor);
-            else if (type < 0.6f)
-                AddShelf(room, position, rotation, furnitureColor, itemColor);
+            if (type < 0.6f)
+                AddFurniture(room, position, rotation, furnitureColor, itemColor);
             else if (type < 0.85f)
                 AddCrates(room, position, rotation);
             else
@@ -40,48 +54,33 @@ public class RoomGenerator : MonoBehaviour
         }
     }
 
-    private void AddTable(Transform room, Vector3 position, Quaternion rotation, Color color, Color itemColor)
+    // A table or a shelf, with a small object on 40% of its slots
+    private void AddFurniture(Transform room, Vector3 position, Quaternion rotation, Color color, Color itemColor)
     {
-        int width = Random.Range(8, 12);
-        int height = 6;
-        int depth = Random.Range(5, 8);
-        Place(RoomObjects.Table(width, height, depth, color), room, position, rotation);
+        GameObject furniture = Spawn(RandomPrefab(furniturePrefabs), room, position, rotation, furnitureCube, color);
 
-        // Slots of at least 40 cm on the top, so that the objects do not overlap
-        float length = width * RoomObjects.FurnitureCube;
-        int count = Random.Range(1, Mathf.FloorToInt(length / 0.4f) + 1);
-        AddItems(room, position, rotation, height * RoomObjects.FurnitureCube, length, count, itemColor);
-    }
-
-    private void AddShelf(Transform room, Vector3 position, Quaternion rotation, Color color, Color itemColor)
-    {
-        int width = Random.Range(7, 10);
-        int levels = 3;
-        int levelHeight = 4;
-        Place(RoomObjects.Shelf(width, levels, levelHeight, 3, color), room, position, rotation);
-
-        // 0 to 2 objects on each board, between the two sides
-        float length = (width - 2) * RoomObjects.FurnitureCube;
-        for (int level = 0; level <= levels; level++)
+        foreach (Transform child in furniture.transform)
         {
-            float height = (level * levelHeight + 1) * RoomObjects.FurnitureCube;
-            AddItems(room, position, rotation, height, length, Random.Range(0, 3), itemColor);
+            if (child.name == "Slot" && Random.value < 0.4f)
+            {
+                Vector3 itemPosition = position + rotation * child.localPosition;
+                Spawn(RandomPrefab(itemPrefabs), room, itemPosition, rotation, itemCube, itemColor);
+            }
         }
     }
 
-    // A stack of 1 to 3 crates, each one a bit shifted and turned
+    // A stack of 1 to 3 crates, each one a bit shifted and turned.
+    // All the same size: a big crate on a small one is unstable and can fall by itself
     private void AddCrates(Transform room, Vector3 position, Quaternion rotation)
     {
-        float height = 0f;
+        GameObject prefab = RandomPrefab(cratePrefabs);
         int count = Random.Range(1, 4);
         for (int i = 0; i < count; i++)
         {
-            int size = Random.Range(3, 5);
-            Vector3 shift = new Vector3(Random.Range(-0.05f, 0.05f), height, Random.Range(-0.05f, 0.05f));
+            Vector3 shift = new Vector3(Random.Range(-0.05f, 0.05f), 0f, Random.Range(-0.05f, 0.05f));
             Quaternion turn = Quaternion.Euler(0f, Random.Range(-20f, 20f), 0f);
-            Place(RoomObjects.Crate(size, wood), room, position + rotation * shift, rotation * turn);
-            // Put the next crate 1 cm above this one, so that they do not overlap
-            height += size * RoomObjects.FurnitureCube + 0.01f;
+            GameObject crate = Spawn(prefab, room, position + rotation * shift, rotation * turn, furnitureCube, wood);
+            position.y += crate.transform.Find("Slot").localPosition.y;
         }
     }
 
@@ -92,40 +91,22 @@ public class RoomGenerator : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             float x = (i - (count - 1) / 2f) * 0.7f;
-            Place(RoomObjects.Chair(4, 3, 4, color), room, position + rotation * new Vector3(x, 0f, 0f), rotation);
+            Spawn(chairPrefab, room, position + rotation * new Vector3(x, 0f, 0f), rotation, furnitureCube, color);
         }
     }
 
-    // Puts count small objects side by side on a surface: the surface is cut into count slots, one object in the middle of each
-    private void AddItems(Transform room, Vector3 position, Quaternion rotation, float height, float length, int count, Color color)
+    private GameObject RandomPrefab(GameObject[] prefabs)
     {
-        for (int i = 0; i < count; i++)
-        {
-            float x = ((i + 0.5f) / count - 0.5f) * length;
-            // 1 cm above the surface: an object that starts inside another one would be pushed out hard and break
-            Vector3 itemPosition = position + rotation * new Vector3(x, height + 0.01f, 0f);
-            Place(RandomItem(color), room, itemPosition, rotation);
-        }
+        return prefabs[Random.Range(0, prefabs.Length)];
     }
 
-    private GameObject RandomItem(Color color)
+    // The room is inactive while it is built, so the Awake of the new object waits until the room is shown:
+    // Breakable and XRI will see the small cubes, not the big boxes of the prefab
+    private GameObject Spawn(GameObject prefab, Transform room, Vector3 position, Quaternion rotation, float cubeSize, Color color)
     {
-        switch (Random.Range(0, 3))
-        {
-            case 0:
-                return RoomObjects.Vase(Random.Range(4, 6), Random.Range(4, 6), color);
-            case 1:
-                return RoomObjects.Bottle(5, color);
-            default:
-                return RoomObjects.Plate(5, color);
-        }
-    }
-
-    private void Place(GameObject obj, Transform room, Vector3 position, Quaternion rotation)
-    {
-        obj.transform.SetParent(room, false);
+        GameObject obj = Instantiate(prefab, room);
         obj.transform.SetLocalPositionAndRotation(position, rotation);
-        // The room is inactive while it is built: Awake of the object will run when the room is shown
-        obj.SetActive(true);
+        CubeCutter.Cut(obj, cubeSize, color);
+        return obj;
     }
 }

@@ -16,12 +16,24 @@
 - Unity, Random.InitState : même graine = même suite de nombres = même pièce.
   https://docs.unity3d.com/ScriptReference/Random.InitState.html
 
-## Objets en cubes (ChunkBuilder, RoomObjects)
+## Objets en cubes (CubeCutter, prefabs de Assets/Prefabs/RoomObjects)
 
+- Unity, Prefabs : chaque objet est un prefab fait de quelques grands cubes étirés (plateau, pieds, etc.).
+  https://docs.unity3d.com/Manual/Prefabs.html
+- Voxel : découper un volume en une grille régulière de petits cubes, le principe de CubeCutter.
+  https://en.wikipedia.org/wiki/Voxel
 - Unity, GameObject.CreatePrimitive : chaque cube (MeshFilter, MeshRenderer, BoxCollider).
   https://docs.unity3d.com/ScriptReference/GameObject.CreatePrimitive.html
-- Unity, MonoBehaviour.Awake : Awake n'est appelé qu'à l'activation de l'objet, d'où les objets construits inactifs puis activés.
+- Unity, Object.Instantiate (avec un parent) : le prefab est copié directement dans la pièce, encore inactive.
+  https://docs.unity3d.com/ScriptReference/Object.Instantiate.html
+- Unity, MonoBehaviour.Awake : Awake n'est appelé qu'à l'activation de l'objet, ce qui laisse le temps de le découper avant que Breakable et XRI lisent ses colliders.
   https://docs.unity3d.com/ScriptReference/MonoBehaviour.Awake.html
+- Unity, Component.GetComponentsInChildren (includeInactive) : retrouver les grands cubes d'un objet inactif.
+  https://docs.unity3d.com/ScriptReference/Component.GetComponentsInChildren.html
+- Unity, Object.Destroy et Object.DestroyImmediate : Destroy attend la fin de la frame, or la pièce peut s'afficher dans la même frame.
+  https://docs.unity3d.com/ScriptReference/Object.Destroy.html
+  https://docs.unity3d.com/ScriptReference/Object.DestroyImmediate.html
+- Vu en test : une pile avec une petite caisse sous deux grandes s'est effondrée toute seule, d'où une seule taille de caisse par pile.
 
 ## Casse (Breakable)
 
@@ -42,7 +54,7 @@
 - Unity, SRP Batcher : pourquoi le nombre de draw calls compte sur Quest.
   https://docs.unity3d.com/Manual/SRPBatcher.html
 
-## Interaction VR (RoomObjects, RoomManager, prefab Bat)
+## Interaction VR (prefabs de RoomObjects, RoomManager, prefab Bat)
 
 - Unity, XR Interaction Toolkit 3.3, XR Grab Interactable : Movement Type (Velocity Tracking), Attach Transform, Use Dynamic Attach, Retain Transform Parent.
   https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@3.3/manual/xr-grab-interactable.html
@@ -51,6 +63,7 @@
 - Unity, Interaction between collider types (matrice des collisions) : un objet kinematic contre un collider statique ne déclenche pas OnCollisionEnter, d'où Velocity Tracking.
   https://docs.unity3d.com/Manual/collider-types-interaction.html
 - Code source du package XR Interaction Toolkit 3.3.2 (Library/PackageCache/com.unity.xr.interaction.toolkit@*/Runtime/Interaction) :
+  XRBaseInteractable.cs, Awake() : si la liste colliders est vide, elle est remplie avec les colliders des enfants (raison pour laquelle on découpe l'objet avant son Awake).
   XRGrabInteractable.cs, Grab() et Drop() : l'objet tenu est sorti de son parent, puis remis dedans seulement si ce parent est actif.
   XRInteractionManager.cs, RegisterInteractable() : la table collider → objet n'est remplie qu'à l'enregistrement (raison pour laquelle un objet attrapable éclate en entier).
 

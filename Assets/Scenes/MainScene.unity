@@ -360,7 +360,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &359430556
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1776,6 +1776,19 @@ MonoBehaviour:
   zoneCenter: {x: -1.85, y: 0, z: 1.85}
   zoneSize: {x: 6.2, y: 4.2}
   minDistance: 1.8
+  maxCubes: 1100
+  furniturePrefabs:
+  - {fileID: 4596030300091444929, guid: abb8409c6ab7449b094bb695b83e43f8, type: 3}
+  - {fileID: 4043855870657906787, guid: be0c5398b20464cce8d9ee997c5c11c7, type: 3}
+  - {fileID: 1817653098108979720, guid: a87d6910d1a2243fd8b42f3e74f4ed32, type: 3}
+  cratePrefabs:
+  - {fileID: 5139439042878583253, guid: 80ae6d253e52c4abd8a940f7d2ccc220, type: 3}
+  - {fileID: 8016397169055732325, guid: 6e85b5668bd6a4611bb1ba5873445acc, type: 3}
+  chairPrefab: {fileID: 361502064329547063, guid: 06e5dd604dd704c0a940a8803e587213, type: 3}
+  itemPrefabs:
+  - {fileID: 6590245572406500240, guid: fd8240f2a0b604819855132fb5e68594, type: 3}
+  - {fileID: 2533144800951021494, guid: 75ed5b94cf4114b2f8f66fb2fac392bf, type: 3}
+  - {fileID: 7034592069306834487, guid: eabb4b1890d33473385b50cec1a41a84, type: 3}
 --- !u!1 &2038750304 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1767192433, guid: f6336ac4ac8b4d34bc5072418cdc62a0, type: 3}
