@@ -82,3 +82,17 @@
   https://docs.unity3d.com/ScriptReference/Physics.IgnoreCollision.html
 - Unity, Rigidbody.maxAngularVelocity : la limite par défaut (7 rad/s) est trop basse pour un coup de batte.
   https://docs.unity3d.com/ScriptReference/Rigidbody-maxAngularVelocity.html
+
+## Déplacement et confort en VR (rig XR Origin de MainScene)
+
+- Unity, CharacterController.minMoveDistance : un déplacement plus petit que cette valeur est ignoré. Vu en test à 2,5 m/s avec 0,005 : 2,50 m/s jusqu'à 500 images/s, puis 0 m/s (2,5 / 500 = 0,005 m par image), d'où la valeur 0.
+  https://docs.unity3d.com/ScriptReference/CharacterController-minMoveDistance.html
+- Unity, Character Controller, Step Offset : hauteur que le joueur monte d'un coup. Vu en test avec 0,5 : montée de 43 cm en une image contre une caisse. Avec 0,13 : plus de montée sur les meubles testés, mais on passe encore sur un cube détaché.
+  https://docs.unity3d.com/Manual/class-CharacterController.html
+- Unity, XR Interaction Toolkit 3.3, Continuous Turn Provider : rotation continue au stick droit (Turn Speed = 60 °/s, Enable Turn Around désactivé pour éviter le demi-tour instantané).
+  https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@3.3/manual/continuous-turn-provider.html
+- Unity, XR Interaction Toolkit 3.3, Tunneling Vignette Controller : prefab TunnelingVignette placé sous la caméra, déclenché par les providers de déplacement et de rotation.
+  https://docs.unity3d.com/Packages/com.unity.xr.interaction.toolkit@3.3/manual/tunneling-vignette-controller.html
+- Fernandes, Feiner (2016). Combating VR Sickness through Subtle Dynamic Field-of-View Modification. IEEE 3DUI, p. 201-210 : réduire le champ de vision pendant le mouvement diminue le mal des transports virtuel.
+  https://doi.org/10.1109/3DUI.2016.7460053
+- Code source du package XR Interaction Toolkit 3.3.2 (Library/PackageCache/com.unity.xr.interaction.toolkit@*/Runtime/Inputs/Simulation/XRInteractionSimulator.cs), ProcessControlInput() : le stick gauche n'est mis à jour que si Shift est tenu, donc il reste poussé si Shift est relâché avant la lettre (vu en test : 2,50 m/s sans aucune touche).
